@@ -1,0 +1,3 @@
+docker-compose -f local.yml up
+
+"build docker image" docker build -t consul-loader -f Dockerfile .

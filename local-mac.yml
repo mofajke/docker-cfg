@@ -1,0 +1,86 @@
+version: "3"
+services:
+
+  mofa-postgres:
+    image: postgres:14.0-alpine
+    container_name: mofa-postgres
+    restart: on-failure
+    user: root
+    ports:
+      - "7432:5432"
+    volumes:
+      - /Users/mofa/docker/postgresql/data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      LANG: ru_RU.UTF-8
+      LANGUAGE: ru_RU.UTF-8
+      LC_ALL: ru_RU.UTF-8
+      POSTGRES_INITDB_ARGS: '-E UTF-8'
+  
+  mofa-redis:
+    container_name: mofa-redis
+    image: redis
+    user: root
+    ports:
+      - "6800:6379"
+    volumes:
+      - /Users/mofa/docker/redis/data:/data
+    entrypoint: redis-server --appendonly yes --requirepass redispass123
+    restart: on-failure
+
+#  mofa-mssql:
+#    user: root
+#    image: "mcr.microsoft.com/azure-sql-edge:latest"
+#    container_name: mofa-mssql
+#    environment:
+#      SA_PASSWORD: "Rdflhfajy1!"
+#      ACCEPT_EULA: "Y"
+#    ports:
+#      - "1533:1433"
+#    volumes:
+#      - /Users/mofa/docker/mssql/data:/var/opt/mssql/data
+#    restart: on-failure
+
+  mofa-zookeeper:
+    image: 'bitnami/zookeeper:latest'
+    container_name: mofa-zookeeper
+    ports:
+      - '2181:2181'
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    restart: on-failure
+
+  mofa-kafka:
+    image: 'bitnami/kafka:latest'
+    container_name: mofa-kafka
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+      - "1099:1099"
+    environment:
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_ZOOKEEPER_CONNECT=mofa-zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=INTERNAL://mofa-kafka:9092,EXTERNAL://127.0.0.1:9093
+      - KAFKA_BROKER_ID=1
+      - KAFKA_LISTENERS=INTERNAL://:9092,EXTERNAL://:9093
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=EXTERNAL:PLAINTEXT,INTERNAL:PLAINTEXT
+      - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
+      - JMX_PORT=1099
+      - JMX_OPTS="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.rmi.port=1099"      
+    depends_on:
+      - mofa-zookeeper
+    restart: on-failure
+
+  mofa-cmak:
+    image: 'hlebalbau/kafka-manager:stable'
+    container_name: mofa-cmak
+    ports:
+      - "9050:9000"
+    environment:
+      ZK_HOSTS: "mofa-zookeeper:2181"
+      APPLICATION_SECRET: "random-secret"
+    depends_on:
+      - mofa-zookeeper
+    restart: on-failure

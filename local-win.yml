@@ -32,11 +32,14 @@ services:
 
   mofa-mssql:
     user: root
-    image: "mcr.microsoft.com/mssql/server"
+    image: "mcr.microsoft.com/mssql/server:2022-latest"
     container_name: mofa-mssql
     environment:
-      SA_PASSWORD: "rdflhfajy1"
+      MSSQL_PID: "Developer"
+      MSSQL_SA_PASSWORD: "Rdflhf@jy1"
       ACCEPT_EULA: "Y"
+      MSSQL_DATA_DIR: "/var/opt/mssql/data"
+      MSSQL_LOG_DIR: "/var/opt/mssql/data"
     ports:
       - "1533:1433"
     volumes:
